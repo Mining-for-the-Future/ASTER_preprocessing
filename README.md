@@ -6,6 +6,8 @@ To install, enter the following code in your terminal. Ensure that you are in th
 `pip install git+https://github.com/Mining-for-the-Future/ASTER_preprocessing.git`
 
 ## Description
+The package consists of three modules: `preprocessing`, `data_conversion`, and `masks`.
+
 The `preprocessing` module contains the wrapper function `aster_preprocessing`.
 This function takes a geometry object (ee.ComputedObject, ee.FeatureCollection, or ee.Geometry) and creates an ImageCollection
 of ASTER imagery intersecting that geometry. It then applies all preprocessing functions, reduces the ImageCollection to an Image object by taking the median pixel value, and clips the image to the geometry.
