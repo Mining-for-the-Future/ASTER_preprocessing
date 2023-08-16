@@ -59,3 +59,16 @@ def aster_brightness_temp(image):
   )
 
   return image.addBands(T.rename('B13'), None, True)
+
+def aster_brightness_temp_all_tir(image):
+  """
+  Takes an ASTER image with pixel values in at-sensor radiance.
+  Converts TIR band B13 to at-satellite brightness temperature.
+  """
+  K1_vals = [3040.136402, 2482.375199, 1935.060183, 866.468575, 641.326517]
+  K2_vals = [1735.337945, 1666.398761, 1585.420044, 1350.069147, 1271.221673]
+  T = image.expression('K2 / (log(K1/L + 1))',
+                   {'K1': K1_vals, 'K2': K2_vals, 'L': image.select('B10', 'B11', 'B12', 'B13', 'B14')}
+  )
+
+  return image.addBands(T.rename('B10', 'B11', 'B12', 'B13', 'B14'), None, True)
