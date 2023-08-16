@@ -1,12 +1,12 @@
 # This module contains all the functions necessary to process L1T ASTER data 
 # for quantitative analysis. 
-# All functions are called in the function aster_pre_processing() which 
+# All functions are called in the function aster_preprocessing() which 
 # takes an ee.Geometry object defining the area of interest. 
 # It returns a dictionary containing the processed image as an ee.Image object, 
 # the crs and the crs transform. 
 
-from data_conversion import aster_radiance, aster_reflectance, aster_brightness_temp
-from masks import water_mask, aster_cloud_mask, aster_snow_mask
+from .data_conversion import aster_radiance, aster_reflectance, aster_brightness_temp
+from .masks import water_mask, aster_cloud_mask, aster_snow_mask
 import ee
 ee.Initialize()
 
