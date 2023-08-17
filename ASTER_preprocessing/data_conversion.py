@@ -72,3 +72,14 @@ def aster_brightness_temp_all_tir(image):
   )
 
   return image.addBands(T.rename('B10', 'B11', 'B12', 'B13', 'B14'), None, True)
+
+def aster_data_conversion(image):
+  """
+  Wrapper function that takes an aster image and converts all pixel values from 
+  digital number to top-of-atmosphere reflectance (bands 1 - 9) and 
+  at-satellite brightness temperature (bands 10 - 14).
+  """
+  img = aster_radiance(image)
+  img = aster_reflectance(img)
+  img = aster_brightness_temp_all_tir(img)
+  return img
