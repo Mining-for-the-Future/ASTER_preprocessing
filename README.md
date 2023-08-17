@@ -21,6 +21,7 @@ The `data_conversion` module contains functions that:
 * convert at-sensor-radiance of visible and shortwave infrared bands to top-of-atmosphere reflectance (`aster_reflectance`)[^1]
 * convert at-sensor-radiance of all thermal infrared bands to top-of-atmosphere brightness-temperature (`aster_brightness_temp_all_tir`).[^2] This function is not used elsewhere in this package.
 * convert at-sensor-radiance of band 13 to top-of-atmosphere brightness-temperature (`aster_brightness_temp`).[^2] This function is used in the `aster_cloud_mask` function in the `masks` module.
+* perform all conversions for all bands in a single function (`aster_data_conversion`).
 
 
 The `masks` module contains a series of functions that mask out certain pixels.
