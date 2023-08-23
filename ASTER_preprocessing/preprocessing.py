@@ -32,7 +32,7 @@ def aster_bands_present_filter(collection):
 
 def aster_preprocessing(geom):
   """
-  Takes a geometry (ComputedObject, Geometry, or FeatureCollection object).
+  Takes a geometry (ee.ComputedObject, ee.FeatureCollection, or ee.Geometry).
   Collects ASTER satellite imagery that intersects the geometry and
   implements all available preprocessing functions.
   Reduces resulting ImageCollection to a single Image object
