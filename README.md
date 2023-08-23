@@ -8,14 +8,14 @@ To install, enter the following code in your terminal. Ensure that you are in th
 ## Description
 The package consists of three modules: `preprocessing`, `data_conversion`, and `masks`.
 
-###Preprocessing module
+### Preprocessing module
 
 The `preprocessing` module contains the wrapper function `aster_preprocessing`.
 This function takes a geometry object (ee.ComputedObject, ee.FeatureCollection, or ee.Geometry) and creates an ImageCollection
 of ASTER imagery intersecting that geometry. It then applies all preprocessing functions, reduces the ImageCollection to an Image object by taking the median pixel value, and clips the image to the geometry.
 The function returns a dictionary containing the preprocessed image as well as metadata (crs and crs transform) from one of the original ASTER images. This metadata is helpful for exporting the resulting image.
 
-####`aster_preprocessing(geometry)`
+#### `aster_preprocessing(geometry)`
 
 **Parameters:**
  | Name | Type |	Description |	Default |
@@ -33,7 +33,7 @@ The function returns a dictionary containing the preprocessed image as well as m
 These functions were originally designed for mineral exploration, so they might not all be applicable for other use cases.
 For that reason, the functions can also be used individually.
 
-###Data conversion module
+### Data conversion module
 
 The `data_conversion` module contains functions that:
 * convert the pixel values of ASTER imagery from digital numbers to at-sensor-radiance (`aster_radiance`)[^1]
@@ -42,7 +42,7 @@ The `data_conversion` module contains functions that:
 * convert at-sensor-radiance of band 13 to top-of-atmosphere brightness-temperature (`aster_brightness_temp`).[^2] This function is used in the `aster_cloud_mask` function in the `masks` module.
 * perform all conversions for all bands in a single function (`aster_data_conversion`).
 
-###Mask module
+### Mask module
 
 The `masks` module contains a series of functions that mask out certain pixels.
 * The `water_mask` function uses monthly historical data on surface water derived from Landsat imagery to remove pixels covered with water.[^3]
