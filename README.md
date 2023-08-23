@@ -13,6 +13,20 @@ This function takes a geometry object (ee.ComputedObject, ee.FeatureCollection, 
 of ASTER imagery intersecting that geometry. It then applies all preprocessing functions, reduces the ImageCollection to an Image object by taking the median pixel value, and clips the image to the geometry.
 The function returns a dictionary containing the preprocessed image as well as metadata (crs and crs transform) from one of the original ASTER images. This metadata is helpful for exporting the resulting image.
 
+<details>
+<summary>`aster_preprocessing(geometry)`<summary>
+
+**Parameters:**
+ | Name | Type |	Description |	Default |
+ | --- | --- | --- | --- |
+ | `geometry` | `ee.ComputedObject | ee.FeatureCollection | ee.Geometry` | The input geometry. | _required_ |
+
+**Returns:**
+ | Type |	Description |	
+ | --- | --- | 
+ | `dict` | The processed image along with the crs and crs_transform metadata of the first image in the ImageCollection that intersects the geometry. | 
+<details>
+
 These functions were originally designed for mineral exploration, so they might not all be applicable for other use cases.
 For that reason, the functions can also be used individually.
 
