@@ -1,5 +1,5 @@
-import ee
-ee.Initialize()
+from .__init__ import initialize_ee
+ee_i = initialize_ee()
 
 def water_mask(image):
   """
@@ -9,12 +9,12 @@ def water_mask(image):
   (https://developers.google.com/earth-engine/datasets/catalog/JRC_GSW1_4_MonthlyHistory).
   Returns a masked image.
   """
-  month_water = ee.ImageCollection("JRC/GSW1_4/MonthlyHistory")
+  month_water = ee_i.ImageCollection("JRC/GSW1_4/MonthlyHistory")
   m = image.date().get('month')
   y = image.date().get('year')
-  water = month_water.filter(ee.Filter.And(
-      ee.Filter.eq('month', m),
-      ee.Filter.eq('year', y)
+  water = month_water.filter(ee_i.Filter.And(
+      ee_i.Filter.eq('month', m),
+      ee_i.Filter.eq('year', y)
   )).mode()
   # the mode() method call is necessary because the filter() method returns an image collection containing one image. 
   # mode() reduces it to a single image object
@@ -99,10 +99,10 @@ def aster_cloud_mask(image):
   img = ac_filt6(img)
   img = ac_filt7(img)
   # The seven filters identify pixels that ARE clouds and mask the rest.
-  # ee.Image.unmask() replaces the masked pixels of an image with a constant value.
+  # ee_i.Image.unmask() replaces the masked pixels of an image with a constant value.
   # The .eq() filter returns a binary mask identifying which pixels match the
   # constant value assigned in the unmask() method, i.e., pixels that ARE NOT clouds.
-  mask = img.unmask(ee.Image.constant(-1)).eq(-1)
+  mask = img.unmask(ee_i.Image.constant(-1)).eq(-1)
   return image.updateMask(mask)
 
 
