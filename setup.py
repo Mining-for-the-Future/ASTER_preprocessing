@@ -9,5 +9,5 @@ setup(
     author_email = 'eweaverdyck@gmail.com',
     license = 'MIT',
     packages = ['ASTER_preprocessing'],
-    install_requires = ['earth-engine-api']
+    install_requires = ['earthengine-api']
 )
