@@ -1,13 +1,13 @@
-import ee
-ee.Initialize()
+from .__init__ import initialize_ee
+ee_i = initialize_ee()
 
 def aster_radiance(image):
   """
   Takes an ASTER image with pixel values in DN (as stored by Googel Earth Engine).
   Converts DN to at-sensor radiance across all bands.
   """
-  coefficients = ee.ImageCollection(
-        image.bandNames().map(lambda band: ee.Image(image.getNumber(ee.String('GAIN_COEFFICIENT_').cat(band))).float())
+  coefficients = ee_i.ImageCollection(
+        image.bandNames().map(lambda band: ee_i.Image(image.getNumber(ee_i.String('GAIN_COEFFICIENT_').cat(band))).float())
     ).toBands().rename(image.bandNames())
 
   radiance = image.subtract(1).multiply(coefficients)
@@ -21,19 +21,19 @@ def aster_reflectance(image):
   """
   dayOfYear = image.date().getRelative('day', 'year')
 
-  earthSunDistance = ee.Image().expression(
+  earthSunDistance = ee_i.Image().expression(
         '1 - 0.01672 * cos(0.01720209895 * (dayOfYear - 4))',
         {'dayOfYear': dayOfYear}
     )
 
   sunElevation = image.getNumber('SOLAR_ELEVATION')
 
-  sunZen = ee.Image().expression(
+  sunZen = ee_i.Image().expression(
         '(90 - sunElevation) * pi/180',
         {'sunElevation': sunElevation, 'pi': 3.14159265359}
     )
 
-  reflectanceFactor = ee.Image().expression(
+  reflectanceFactor = ee_i.Image().expression(
         'pi * pow(earthSunDistance, 2) / cos(sunZen)',
         {'earthSunDistance': earthSunDistance, 'sunZen': sunZen, 'pi': 3.14159265359}
     )
