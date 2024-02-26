@@ -5,11 +5,11 @@
 # It returns a dictionary containing the processed image as an ee_i.Image object, 
 # the crs and the crs transform. 
 
-from .data_conversion import aster_radiance, aster_reflectance, aster_brightness_temp
-from .masks import water_mask, aster_cloud_mask, aster_snow_mask
-
 from .__init__ import initialize_ee
 ee_i = initialize_ee()
+
+from .data_conversion import aster_radiance, aster_reflectance, aster_brightness_temp
+from .masks import water_mask, aster_cloud_mask, aster_snow_mask
 
 # Filter ASTER imagery that contain all bands
 def aster_bands_present_filter(collection):
