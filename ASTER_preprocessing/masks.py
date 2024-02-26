@@ -1,4 +1,4 @@
-from preprocessing import ee_i
+from .preprocessing import ee_i
 
 def water_mask(image):
   """
