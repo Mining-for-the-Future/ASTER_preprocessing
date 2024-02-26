@@ -1,5 +1,5 @@
-from .__init__ import initialize_ee
-ee_i = initialize_ee()
+# from .__init__ import initialize_ee
+# ee_i = initialize_ee()
 
 def aster_radiance(image):
   """
