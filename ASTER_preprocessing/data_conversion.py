@@ -1,5 +1,4 @@
-# from .__init__ import initialize_ee
-# ee_i = initialize_ee()
+from preprocessing import ee_i
 
 def aster_radiance(image):
   """
