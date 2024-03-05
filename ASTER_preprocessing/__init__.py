@@ -20,6 +20,6 @@ def initialize_ee():
     Returns:
     ee: The initialized Earth Engine API.
     """
-    ee.Authenticate()
+    ee.Authenticate(force = True)
     ee.Initialize()
     return ee
