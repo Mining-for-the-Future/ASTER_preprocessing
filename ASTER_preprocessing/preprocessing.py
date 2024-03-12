@@ -8,7 +8,7 @@
 from .__init__ import initialize_ee
 ee_i = initialize_ee()
 
-from .data_conversion import aster_radiance, aster_reflectance, aster_brightness_temp
+from .data_conversion import aster_dn2toa, aster_radiance, aster_reflectance, aster_brightness_temp
 from .masks import water_mask, aster_cloud_mask, aster_snow_mask
 
 # Filter ASTER imagery that contain all bands
@@ -22,6 +22,24 @@ def aster_bands_present_filter(collection, bands = ['B01', 'B02', 'B3N', 'B04', 
     filters = [ee_i.Filter.listContains('ORIGINAL_BANDS_PRESENT', band) for band in bands]
     
     return collection.filter(ee_i.Filter.And(filters))
+
+def aster_image_preprocessing(image, bands=['B01', 'B02', 'B3N', 'B04', 'B05', 'B06', 'B07', 'B08', 'B09', 'B13'], masks = ['cloud']):
+   """
+   Converts the specified bands in an image from digital number to 
+   at-sensor reflectance (VIS/SWIR) and at-satellite brightness temperature (TIR),
+   then applies the specified masks (snow, water, and cloud).
+   """
+   masks = {
+      'cloud': aster_cloud_mask,
+      'snow': aster_snow_mask,
+      'water': water_mask
+   }
+   
+   image = aster_dn2toa(image)
+   for mask in masks:
+      image = masks[mask](image)
+
+
 
 def aster_collection_preprocessing(geom, masks = ['cloud', 'snow', 'water']):
   """
