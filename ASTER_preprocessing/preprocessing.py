@@ -29,7 +29,7 @@ def aster_image_preprocessing(image, bands=['B01', 'B02', 'B3N', 'B04', 'B05', '
    at-sensor reflectance (VIS/SWIR) and at-satellite brightness temperature (TIR),
    then applies the specified masks (snow, water, and cloud).
    """
-   masks = {
+   mask_dict = {
       'cloud': aster_cloud_mask,
       'snow': aster_snow_mask,
       'water': water_mask
@@ -37,7 +37,7 @@ def aster_image_preprocessing(image, bands=['B01', 'B02', 'B3N', 'B04', 'B05', '
    
    image = aster_dn2toa(image, bands)
    for mask in masks:
-      image = masks[mask](image)
+      image = mask_dict[mask](image)
    return image
 
 
