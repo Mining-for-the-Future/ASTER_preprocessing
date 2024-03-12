@@ -50,7 +50,7 @@ def aster_image_preprocessing(image, bands=['B01', 'B02', 'B3N', 'B04', 'B13'], 
 
 
 
-def aster_collection_preprocessing(geom, bands = ['B01', 'B02', 'B3N', 'B04', 'B05', 'B06', 'B07', 'B08', 'B09', 'B13'], masks = ['cloud', 'snow', 'water']):
+def aster_collection_preprocessing(geom, bands = ['B01', 'B02', 'B3N', 'B04', 'B13'], masks = ['cloud', 'snow', 'water']):
   """
   Takes a geometry (ee_i.ComputedObject, ee_i.FeatureCollection, or ee_i.Geometry).
   Collects ASTER satellite imagery that intersects the geometry and
@@ -64,11 +64,12 @@ def aster_collection_preprocessing(geom, bands = ['B01', 'B02', 'B3N', 'B04', 'B
   """
   coll = ee_i.ImageCollection("ASTER/AST_L1T_003")
   coll = coll.filterBounds(geom)
-  coll = aster_bands_present_filter(coll)
+  coll = aster_bands_present_filter(coll, bands = bands)
   crs = coll.first().select(bands[0]).projection().getInfo()['crs']
   transform = coll.first().select(bands[0]).projection().getInfo()['transform']
   
   coll = coll.map(lambda x: aster_image_preprocessing(x, bands, masks))
+  coll = coll.map(lambda x: x.clip(geom))
   
-  coll = coll.median().clip(geom)
+  # coll = coll.median().clip(geom)
   return {'imagery': coll, 'crs': crs, 'transform': transform}
