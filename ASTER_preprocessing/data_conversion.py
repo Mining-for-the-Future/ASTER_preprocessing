@@ -107,6 +107,6 @@ def aster_dn2toa(image, bands):
   at-satellite brightness temperature (bands 10 - 14).
   """
   img = aster_radiance(image)
-  img = aster_reflectance(img)
+  img = aster_reflectance(img, bands)
   img = aster_brightness_temp(img, bands)
   return img

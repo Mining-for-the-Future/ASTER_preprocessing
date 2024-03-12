@@ -29,7 +29,7 @@ def aster_ndsi(image):
   if image.bandNames().containsAll(['B01', 'B04']):
     return (image.select('B01').subtract(image.select('B04')).divide((image.select('B01').add(image.select('B04'))))).rename('ndsi')
   else:
-    raise ValueError('Image is missing required bands for NDSI calculation')
+    raise ValueError("Image is missing required bands for NDSI calculation ('B01', 'B04')")
 def ac_filt1(image):
   """
   Takes an ASTER image and applies filter 1 in the first pass of Hulley and Hook's (2008) NACMA.
@@ -107,7 +107,7 @@ def aster_cloud_mask(image):
     mask = img.unmask(ee_i.Image.constant(-1)).eq(-1)
     return image.updateMask(mask)
   else:
-    raise ValueError('Image is missing required bands for cloud mask calculation')
+    raise ValueError("Image is missing required bands for cloud mask calculation ('B01', 'B02', 'B3N', 'B04', 'B05', 'B06', 'B07', 'B08', 'B09', 'B13')")
 
 
 def aster_snow_mask(image):

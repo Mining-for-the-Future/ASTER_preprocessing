@@ -35,13 +35,14 @@ def aster_image_preprocessing(image, bands=['B01', 'B02', 'B3N', 'B04', 'B05', '
       'water': water_mask
    }
    
-   image = aster_dn2toa(image)
+   image = aster_dn2toa(image, bands)
    for mask in masks:
       image = masks[mask](image)
+   return image
 
 
 
-def aster_collection_preprocessing(geom, masks = ['cloud', 'snow', 'water']):
+def aster_collection_preprocessing(geom, bands = ['B01', 'B02', 'B3N', 'B04', 'B05', 'B06', 'B07', 'B08', 'B09', 'B13'], masks = ['cloud', 'snow', 'water']):
   """
   Takes a geometry (ee_i.ComputedObject, ee_i.FeatureCollection, or ee_i.Geometry).
   Collects ASTER satellite imagery that intersects the geometry and
@@ -58,11 +59,8 @@ def aster_collection_preprocessing(geom, masks = ['cloud', 'snow', 'water']):
   coll = aster_bands_present_filter(coll)
   crs = coll.first().select('B01').projection().getInfo()['crs']
   transform = coll.first().select('B01').projection().getInfo()['transform']
-  coll = coll.map(aster_radiance)
-  coll = coll.map(aster_reflectance)
-  coll = coll.map(aster_brightness_temp)
-  coll = coll.map(water_mask)
-  coll = coll.map(aster_cloud_mask)
-  coll = coll.map(aster_snow_mask)
+  
+  coll = coll.map(lambda x: aster_image_preprocessing(x, bands, masks))
+  
   coll = coll.median().clip(geom)
   return {'imagery': coll, 'crs': crs, 'transform': transform}
