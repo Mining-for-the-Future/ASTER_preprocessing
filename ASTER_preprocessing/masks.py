@@ -92,7 +92,7 @@ def aster_cloud_mask(image):
   of the New Aster Cloud Mask Algorithm (NACMA) proposed by Hulley and Hook (2008).
   Returns a masked image.
   """
-  if image.bandNames().containsAll(['B01', 'B02', 'B3N', 'B04', 'B05', 'B06', 'B07', 'B08', 'B09', 'B13']):
+  if image.bandNames().containsAll(['B01', 'B02', 'B3N', 'B04', 'B13']):
     img = ac_filt1(image)
     img = ac_filt2(img)
     img = ac_filt3(img)
@@ -107,7 +107,7 @@ def aster_cloud_mask(image):
     mask = img.unmask(ee_i.Image.constant(-1)).eq(-1)
     return image.updateMask(mask)
   else:
-    raise ValueError("Image is missing required bands for cloud mask calculation ('B01', 'B02', 'B3N', 'B04', 'B05', 'B06', 'B07', 'B08', 'B09', 'B13')")
+    raise ValueError("Image is missing required bands for cloud mask calculation ('B01', 'B02', 'B3N', 'B04', 'B13')")
 
 
 def aster_snow_mask(image):

@@ -23,12 +23,20 @@ def aster_bands_present_filter(collection, bands = ['B01', 'B02', 'B3N', 'B04', 
     
     return collection.filter(ee_i.Filter.And(filters))
 
-def aster_image_preprocessing(image, bands=['B01', 'B02', 'B3N', 'B04', 'B05', 'B06', 'B07', 'B08', 'B09', 'B13'], masks = ['cloud']):
+def aster_image_preprocessing(image, bands=['B01', 'B02', 'B3N', 'B04', 'B13'], masks = ['cloud']):
    """
    Converts the specified bands in an image from digital number to 
    at-sensor reflectance (VIS/SWIR) and at-satellite brightness temperature (TIR),
    then applies the specified masks (snow, water, and cloud).
    """
+   snow_bands = {'B01', 'B04'}
+   if 'snow' in masks:
+      bands = list(snow_bands.union(bands))
+
+   cloud_bands = {'B01', 'B02', 'B3N', 'B04', 'B13'}
+   if 'cloud' in masks:
+      bands = list(cloud_bands.union(bands))
+   
    mask_dict = {
       'cloud': aster_cloud_mask,
       'snow': aster_snow_mask,
