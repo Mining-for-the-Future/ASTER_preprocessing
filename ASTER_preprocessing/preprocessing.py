@@ -57,8 +57,8 @@ def aster_collection_preprocessing(geom, bands = ['B01', 'B02', 'B3N', 'B04', 'B
   coll = ee_i.ImageCollection("ASTER/AST_L1T_003")
   coll = coll.filterBounds(geom)
   coll = aster_bands_present_filter(coll)
-  crs = coll.first().select('B01').projection().getInfo()['crs']
-  transform = coll.first().select('B01').projection().getInfo()['transform']
+  crs = coll.first().select(bands[0]).projection().getInfo()['crs']
+  transform = coll.first().select(bands[0]).projection().getInfo()['transform']
   
   coll = coll.map(lambda x: aster_image_preprocessing(x, bands, masks))
   
