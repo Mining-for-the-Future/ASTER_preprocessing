@@ -13,7 +13,7 @@ def aster_radiance(image):
 
   return image.addBands(radiance, None, True)
 
-def aster_reflectance(image):
+def aster_reflectance(image, bands = ['B01', 'B02', 'B3N', 'B04', 'B05', 'B06', 'B07', 'B08', 'B09']):
   """
   Takes an ASTER image with pixel values in at-sensor radiance.
   Converts VIS/SWIR bands (B01 - B09) to at-sensor reflectance.
@@ -37,42 +37,70 @@ def aster_reflectance(image):
         {'earthSunDistance': earthSunDistance, 'sunZen': sunZen, 'pi': 3.14159265359}
     )
 
-  irradiance = [1845.99, 1555.74, 1119.47, 231.25, 79.81, 74.99, 68.66, 59.74, 56.92]
+  irradiance_vals = dict(zip(
+    ['B01', 'B02', 'B3N', 'B04', 'B05', 'B06', 'B07', 'B08', 'B09'],
+    [1845.99, 1555.74, 1119.47, 231.25, 79.81, 74.99, 68.66, 59.74, 56.92]
+  ))
+  irradiance = [irradiance_vals[band] for band in bands]
 
+  # The .select() method requires two lists, one for the band selection and one for the new names.
   reflectance = image \
-        .select('B01', 'B02', 'B3N', 'B04', 'B05', 'B06', 'B07', 'B08', 'B09') \
+        .select(bands, bands) \
         .multiply(reflectanceFactor) \
         .divide(irradiance)
 
   return image.addBands(reflectance, None, True)
 
-def aster_brightness_temp(image):
+def aster_brightness_temp(image, bands = ['B10', 'B11', 'B12', 'B13', 'B14']):
   """
   Takes an ASTER image with pixel values in at-sensor radiance.
-  Converts TIR band B13 to at-satellite brightness temperature.
+  Converts TIR bands to at-satellite brightness temperature.
   """
-  K1_vals = [866.468575]
-  K2_vals = [1350.069147]
+  k_vals = {
+  'B10':{
+    'K1': 3040.136402,
+    'K2': 1735.337945
+  },
+  'B11':{
+    'K1': 2482.375199,
+    'K2': 1666.398761
+  },
+  'B12':{
+    'K1': 1935.060183,
+    'K2': 1585.420044
+  },
+  'B13':{
+    'K1': 866.468575,
+    'K2': 1350.069147
+  },
+  'B14':{
+    'K1': 641.326517,
+    'K2': 1271.221673
+  }
+}
+  
+  K1_vals = [k_vals[band]['K1'] for band in bands]
+  K2_vals = [k_vals[band]['K2'] for band in bands]
   T = image.expression('K2 / (log(K1/L + 1))',
-                   {'K1': K1_vals, 'K2': K2_vals, 'L': image.select('B13')}
+                   {'K1': K1_vals, 'K2': K2_vals, 'L': image.select(bands)}
   )
 
-  return image.addBands(T.rename('B13'), None, True)
+  return image.addBands(T.rename(bands), None, True)
 
-def aster_brightness_temp_all_tir(image):
-  """
-  Takes an ASTER image with pixel values in at-sensor radiance.
-  Converts TIR band B13 to at-satellite brightness temperature.
-  """
-  K1_vals = [3040.136402, 2482.375199, 1935.060183, 866.468575, 641.326517]
-  K2_vals = [1735.337945, 1666.398761, 1585.420044, 1350.069147, 1271.221673]
-  T = image.expression('K2 / (log(K1/L + 1))',
-                   {'K1': K1_vals, 'K2': K2_vals, 'L': image.select('B10', 'B11', 'B12', 'B13', 'B14')}
-  )
+# def aster_brightness_temp_all_tir(image):
+#   """
+#   Takes an ASTER image with pixel values in at-sensor radiance.
+#   Converts TIR band B13 to at-satellite brightness temperature.
+#   """
+#   K1_vals = [3040.136402, 2482.375199, 1935.060183, 866.468575, 641.326517]
+#   K2_vals = [1735.337945, 1666.398761, 1585.420044, 1350.069147, 1271.221673]
+#   T = image.expression('K2 / (log(K1/L + 1))',
+#                    {'K1': K1_vals, 'K2': K2_vals, 'L': image.select('B10', 'B11', 'B12', 'B13', 'B14')}
+#   )
 
-  return image.addBands(T.rename('B10', 'B11', 'B12', 'B13', 'B14'), None, True)
+#   return image.addBands(T.rename('B10', 'B11', 'B12', 'B13', 'B14'), None, True)
 
-def aster_data_conversion(image):
+def aster_dn2toa(image, bands):
   """
   Wrapper function that takes an aster image and converts all pixel values from 
   digital number to top-of-atmosphere reflectance (bands 1 - 9) and 
@@ -80,5 +108,5 @@ def aster_data_conversion(image):
   """
   img = aster_radiance(image)
   img = aster_reflectance(img)
-  img = aster_brightness_temp_all_tir(img)
+  img = aster_brightness_temp(img, bands)
   return img

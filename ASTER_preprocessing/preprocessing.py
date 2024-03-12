@@ -12,26 +12,18 @@ from .data_conversion import aster_radiance, aster_reflectance, aster_brightness
 from .masks import water_mask, aster_cloud_mask, aster_snow_mask
 
 # Filter ASTER imagery that contain all bands
-def aster_bands_present_filter(collection):
+def aster_bands_present_filter(collection, bands = ['B01', 'B02', 'B3N', 'B04', 'B05', 'B06', 'B07', 'B08', 'B09', 'B13']):
     """
     Takes an image collection, assumed to be ASTER imagery.
     Returns a filtered image collection that contains only
     images with all nine VIR/SWIR bands and all 5 TIR bands.
+    By default, filters for the bands necessary to calculate the cloud mask.
     """
-    return collection.filter(ee_i.Filter.And(
-    ee_i.Filter.listContains('ORIGINAL_BANDS_PRESENT', 'B01'),
-    ee_i.Filter.listContains('ORIGINAL_BANDS_PRESENT', 'B02'),
-    ee_i.Filter.listContains('ORIGINAL_BANDS_PRESENT', 'B3N'),
-    ee_i.Filter.listContains('ORIGINAL_BANDS_PRESENT', 'B04'),
-    ee_i.Filter.listContains('ORIGINAL_BANDS_PRESENT', 'B05'),
-    ee_i.Filter.listContains('ORIGINAL_BANDS_PRESENT', 'B06'),
-    ee_i.Filter.listContains('ORIGINAL_BANDS_PRESENT', 'B07'),
-    ee_i.Filter.listContains('ORIGINAL_BANDS_PRESENT', 'B08'),
-    ee_i.Filter.listContains('ORIGINAL_BANDS_PRESENT', 'B09'),
-    ee_i.Filter.listContains('ORIGINAL_BANDS_PRESENT', 'B13')
-))
+    filters = [ee_i.Filter.listContains('ORIGINAL_BANDS_PRESENT', band) for band in bands]
+    
+    return collection.filter(ee_i.Filter.And(filters))
 
-def aster_preprocessing(geom):
+def aster_collection_preprocessing(geom, masks = ['cloud', 'snow', 'water']):
   """
   Takes a geometry (ee_i.ComputedObject, ee_i.FeatureCollection, or ee_i.Geometry).
   Collects ASTER satellite imagery that intersects the geometry and
