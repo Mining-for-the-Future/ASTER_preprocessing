@@ -18,6 +18,13 @@ def aster_reflectance(image, bands = ['B01', 'B02', 'B3N', 'B04', 'B05', 'B06', 
   Takes an ASTER image with pixel values in at-sensor radiance.
   Converts VIS/SWIR bands (B01 - B09) to at-sensor reflectance.
   """
+  vis_bands = set(['B01', 'B02', 'B3N', 'B04', 'B05', 'B06', 'B07', 'B08', 'B09'])
+  bands = list(vis_bands.intersection(bands))
+
+  if len(bands) == 0:
+    print("No VIS/SWIR bands specified")
+    return image
+  
   dayOfYear = image.date().getRelative('day', 'year')
 
   earthSunDistance = ee_i.Image().expression(
@@ -41,9 +48,7 @@ def aster_reflectance(image, bands = ['B01', 'B02', 'B3N', 'B04', 'B05', 'B06', 
     ['B01', 'B02', 'B3N', 'B04', 'B05', 'B06', 'B07', 'B08', 'B09'],
     [1845.99, 1555.74, 1119.47, 231.25, 79.81, 74.99, 68.66, 59.74, 56.92]
   ))
-  vis_bands = set(['B01', 'B02', 'B3N', 'B04', 'B05', 'B06', 'B07', 'B08', 'B09'])
-  bands = list(vis_bands.intersection(bands))
-  
+    
   irradiance = [irradiance_vals[band] for band in bands]
 
   # The .select() method requires two lists, one for the band selection and one for the new names.
@@ -59,6 +64,12 @@ def aster_brightness_temp(image, bands = ['B10', 'B11', 'B12', 'B13', 'B14']):
   Takes an ASTER image with pixel values in at-sensor radiance.
   Converts TIR bands to at-satellite brightness temperature.
   """
+  tir_bands = set(['B10', 'B11', 'B12', 'B13', 'B14'])
+  bands = list(tir_bands.intersection(bands))
+  if len(bands) == 0:
+    print("No TIR bands specified")
+    return image
+  
   k_vals = {
   'B10':{
     'K1': 3040.136402,
@@ -81,9 +92,6 @@ def aster_brightness_temp(image, bands = ['B10', 'B11', 'B12', 'B13', 'B14']):
     'K2': 1271.221673
   }
   }
-
-  tir_bands = set(['B10', 'B11', 'B12', 'B13', 'B14'])
-  bands = list(tir_bands.intersection(bands))
   
   K1_vals = [k_vals[band]['K1'] for band in bands]
   K2_vals = [k_vals[band]['K2'] for band in bands]
