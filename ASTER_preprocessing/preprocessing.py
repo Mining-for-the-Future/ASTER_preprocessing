@@ -8,7 +8,7 @@
 from .__init__ import initialize_ee
 ee_i = initialize_ee()
 
-from .data_conversion import aster_dn2toa, aster_radiance, aster_reflectance, aster_brightness_temp
+from .data_conversion import aster_dn2toa
 from .masks import water_mask, aster_cloud_mask, aster_snow_mask
 
 # Filter ASTER imagery that contain all bands
@@ -65,11 +65,8 @@ def aster_collection_preprocessing(geom, bands = ['B01', 'B02', 'B3N', 'B04', 'B
   coll = ee_i.ImageCollection("ASTER/AST_L1T_003")
   coll = coll.filterBounds(geom)
   coll = aster_bands_present_filter(coll, bands = bands)
-  crs = coll.first().select(bands[0]).projection().getInfo()['crs']
-  transform = coll.first().select(bands[0]).projection().getInfo()['transform']
   
   coll = coll.map(lambda x: aster_image_preprocessing(x, bands, masks))
   coll = coll.map(lambda x: x.clip(geom))
   
-  # coll = coll.median().clip(geom)
-  return {'imagery': coll, 'crs': crs, 'transform': transform}
+  return coll
