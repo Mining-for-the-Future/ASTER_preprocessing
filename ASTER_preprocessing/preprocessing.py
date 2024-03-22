@@ -1,10 +1,3 @@
-# This module contains all the functions necessary to process L1T ASTER data 
-# for quantitative analysis. 
-# All functions are called in the function aster_preprocessing() which 
-# takes an ee_i.Geometry object defining the area of interest. 
-# It returns a dictionary containing the processed image as an ee_i.Image object, 
-# the crs and the crs transform. 
-
 from .__init__ import initialize_ee
 ee_i = initialize_ee()
 
@@ -23,7 +16,7 @@ def aster_bands_present_filter(collection, bands = ['B01', 'B02', 'B3N', 'B04', 
     
     return collection.filter(ee_i.Filter.And(filters))
 
-def aster_image_preprocessing(image, bands=['B01', 'B02', 'B3N', 'B04', 'B13'], masks = ['cloud']):
+def aster_image_preprocessing(image, bands=[], masks = []):
    """
    Converts the specified bands in an image from digital number to 
    at-sensor reflectance (VIS/SWIR) and at-satellite brightness temperature (TIR),
@@ -50,21 +43,32 @@ def aster_image_preprocessing(image, bands=['B01', 'B02', 'B3N', 'B04', 'B13'], 
 
 
 
-def aster_collection_preprocessing(geom, bands = ['B01', 'B02', 'B3N', 'B04', 'B13'], masks = ['cloud', 'snow', 'water']):
+def aster_collection_preprocessing(geom, bands = [], masks = [], cloudcover = 25):
   """
-  Takes a geometry (ee_i.ComputedObject, ee_i.FeatureCollection, or ee_i.Geometry).
-  Collects ASTER satellite imagery that intersects the geometry and
-  implements all available preprocessing functions.
-  Reduces resulting ImageCollection to a single Image object
-  by calculating the median pixel value.
-  Clips the image to the geometry.
-  Returns a dictionary containing the processed image along with 
-  the crs and crs_transform metadata of the first image in the
-  ImageCollection that intersects the geometry.
+  Generate a preprocessed ASTER image collection based on the input geometry, specified bands, and masks.
+  
+  Parameters:
+  - geom: The geometry to filter the ASTER image collection by.
+  - bands: List of bands to include in the preprocessing (default is ['B01', 'B02', 'B3N', 'B04', 'B13']).
+  - masks: List of masks to apply during preprocessing (default includes all available masks: ['cloud', 'snow', 'water']).
+  - cloudcover: Maximum image cloud cover percentage (default is 25).
+  
+  Returns:
+  ee.ImageCollection: Preprocessed ASTER image collection clipped to the input geometry.
   """
+  
   coll = ee_i.ImageCollection("ASTER/AST_L1T_003")
   coll = coll.filterBounds(geom)
+  
+  snow_bands = {'B01', 'B04'}
+  if 'snow' in masks:
+    bands = list(snow_bands.union(bands))
+  cloud_bands = {'B01', 'B02', 'B3N', 'B04', 'B13'}
+  if 'cloud' in masks:
+    bands = list(cloud_bands.union(bands)) 
   coll = aster_bands_present_filter(coll, bands = bands)
+
+  coll = coll.filter(ee_i.Filter.lte('CLOUDCOVER', cloudcover))
   
   coll = coll.map(lambda x: aster_image_preprocessing(x, bands, masks))
   coll = coll.map(lambda x: x.clip(geom))
