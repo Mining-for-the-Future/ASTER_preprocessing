@@ -43,6 +43,7 @@ def aster_image_preprocessing(image, bands=[], masks = []):
       'water': water_mask
    }
    
+   image = ee_i.Image(image.select(image.get('ORIGINAL_BANDS_PRESENT')))
    image = aster_dn2toa(image, bands)
    for mask in masks:
       image = mask_dict[mask](image)
