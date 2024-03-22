@@ -19,15 +19,13 @@ def aster_reflectance(image, bands = []):
   Converts VIS/SWIR bands (B01 - B09) to at-sensor reflectance.
   """
   if len(bands) == 0:
-    bands = image.bandNames().getInfo()
+    bands = image.bandNames()
+  else:
+    bands = ee_i.List(bands)
   
-  vis_bands = set(['B01', 'B02', 'B3N', 'B04', 'B05', 'B06', 'B07', 'B08', 'B09'])
-  bands = list(vis_bands.intersection(bands))
+  vis_bands = ee_i.List(['B01', 'B02', 'B3N', 'B04', 'B05', 'B06', 'B07', 'B08', 'B09'])
+  bands = bands.filter(ee_i.Filter.inList('item', vis_bands))
 
-  if len(bands) == 0:
-    print("No VIS/SWIR bands specified")
-    return image
-  
   dayOfYear = image.date().getRelative('day', 'year')
 
   earthSunDistance = ee_i.Image().expression(
@@ -47,12 +45,13 @@ def aster_reflectance(image, bands = []):
         {'earthSunDistance': earthSunDistance, 'sunZen': sunZen, 'pi': 3.14159265359}
     )
 
-  irradiance_vals = dict(zip(
+  irradiance_vals = ee_i.Dictionary(dict(zip(
     ['B01', 'B02', 'B3N', 'B04', 'B05', 'B06', 'B07', 'B08', 'B09'],
     [1845.99, 1555.74, 1119.47, 231.25, 79.81, 74.99, 68.66, 59.74, 56.92]
-  ))
+  )))
     
-  irradiance = [irradiance_vals[band] for band in bands]
+  irradiance = bands.map(lambda band: irradiance_vals.get(band))
+  irradiance = ee_i.Image.constant(irradiance)
 
   # The .select() method requires two lists, one for the band selection and one for the new names.
   reflectance = image \
@@ -68,15 +67,14 @@ def aster_brightness_temp(image, bands = []):
   Converts TIR bands to at-satellite brightness temperature.
   """
   if len(bands) == 0:
-    bands = image.bandNames().getInfo()
-
-  tir_bands = set(['B10', 'B11', 'B12', 'B13', 'B14'])
-  bands = list(tir_bands.intersection(bands))
-  if len(bands) == 0:
-    print("No TIR bands specified")
-    return image
+    bands = image.bandNames()
+  else:
+    bands = ee_i.List(bands)
   
-  k_vals = {
+  tir_bands = ee_i.List(['B10', 'B11', 'B12', 'B13', 'B14'])
+  bands = bands.filter(ee_i.Filter.inList('item', tir_bands))
+  
+  k_vals = ee_i.Dictionary({
   'B10':{
     'K1': 3040.136402,
     'K2': 1735.337945
@@ -97,17 +95,21 @@ def aster_brightness_temp(image, bands = []):
     'K1': 641.326517,
     'K2': 1271.221673
   }
-  }
+  })
   
-  K1_vals = [k_vals[band]['K1'] for band in bands]
-  K2_vals = [k_vals[band]['K2'] for band in bands]
+  K1_vals = bands.map(lambda band: ee_i.Dictionary(k_vals.get(band)).get('K1'))
+  K1_vals = ee_i.Image.constant(K1_vals)
+
+  K2_vals = bands.map(lambda band: ee_i.Dictionary(k_vals.get(band)).get('K2'))
+  K2_vals = ee_i.Image.constant(K2_vals)
+  
   T = image.expression('K2 / (log(K1/L + 1))',
                    {'K1': K1_vals, 'K2': K2_vals, 'L': image.select(bands)}
   )
 
   return image.addBands(T.rename(bands), None, True)
 
-def aster_dn2toa(image, bands):
+def aster_dn2toa(image, bands = []):
   """
   Wrapper function that takes an aster image and converts all pixel values from 
   digital number to radiance and then converts the specified bands from radiance

@@ -16,7 +16,7 @@ def aster_bands_present_filter(collection, bands = ['B01', 'B02', 'B3N', 'B04', 
     
     return collection.filter(ee_i.Filter.And(filters))
 
-def aster_image_preprocessing(image, bands=['B01', 'B02', 'B3N', 'B04', 'B13'], masks = []):
+def aster_image_preprocessing(image, bands=[], masks = []):
    """
    Converts the specified bands in an image from digital number to 
    at-sensor reflectance (VIS/SWIR) and at-satellite brightness temperature (TIR),
@@ -43,7 +43,7 @@ def aster_image_preprocessing(image, bands=['B01', 'B02', 'B3N', 'B04', 'B13'], 
 
 
 
-def aster_collection_preprocessing(geom, bands = ['B01', 'B02', 'B3N', 'B04', 'B13'], masks = ['cloud', 'snow', 'water'], cloudcover = 25):
+def aster_collection_preprocessing(geom, bands = [], masks = [], cloudcover = 25):
   """
   Generate a preprocessed ASTER image collection based on the input geometry, specified bands, and masks.
   
