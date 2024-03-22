@@ -13,11 +13,14 @@ def aster_radiance(image):
 
   return image.addBands(radiance, None, True)
 
-def aster_reflectance(image, bands = ['B01', 'B02', 'B3N', 'B04', 'B05', 'B06', 'B07', 'B08', 'B09']):
+def aster_reflectance(image, bands = []):
   """
   Takes an ASTER image with pixel values in at-sensor radiance.
   Converts VIS/SWIR bands (B01 - B09) to at-sensor reflectance.
   """
+  if len(bands) == 0:
+    bands = image.bandNames().getInfo()
+  
   vis_bands = set(['B01', 'B02', 'B3N', 'B04', 'B05', 'B06', 'B07', 'B08', 'B09'])
   bands = list(vis_bands.intersection(bands))
 
@@ -59,11 +62,14 @@ def aster_reflectance(image, bands = ['B01', 'B02', 'B3N', 'B04', 'B05', 'B06', 
 
   return image.addBands(reflectance, None, True)
 
-def aster_brightness_temp(image, bands = ['B10', 'B11', 'B12', 'B13', 'B14']):
+def aster_brightness_temp(image, bands = []):
   """
   Takes an ASTER image with pixel values in at-sensor radiance.
   Converts TIR bands to at-satellite brightness temperature.
   """
+  if len(bands) == 0:
+    bands = image.bandNames().getInfo()
+
   tir_bands = set(['B10', 'B11', 'B12', 'B13', 'B14'])
   bands = list(tir_bands.intersection(bands))
   if len(bands) == 0:
