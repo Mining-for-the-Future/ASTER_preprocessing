@@ -13,7 +13,7 @@ def aster_radiance(image):
 
   return image.addBands(radiance, None, True)
 
-def aster_reflectance(image, bands = []):
+def aster_reflectance(image, bands):
   """
   Takes an ASTER image with pixel values in at-sensor radiance.
   Converts VIS/SWIR bands (B01 - B09) to at-sensor reflectance.
@@ -25,6 +25,8 @@ def aster_reflectance(image, bands = []):
   
   vis_bands = ee_i.List(['B01', 'B02', 'B3N', 'B04', 'B05', 'B06', 'B07', 'B08', 'B09'])
   bands = bands.filter(ee_i.Filter.inList('item', vis_bands))
+  if bands.length().eq(0):
+    return image
 
   dayOfYear = image.date().getRelative('day', 'year')
 
@@ -73,6 +75,9 @@ def aster_brightness_temp(image, bands = []):
   
   tir_bands = ee_i.List(['B10', 'B11', 'B12', 'B13', 'B14'])
   bands = bands.filter(ee_i.Filter.inList('item', tir_bands))
+
+  if bands.length().eq(0):
+    return image
   
   k_vals = ee_i.Dictionary({
   'B10':{
@@ -109,7 +114,7 @@ def aster_brightness_temp(image, bands = []):
 
   return image.addBands(T.rename(bands), None, True)
 
-def aster_dn2toa(image, bands = []):
+def aster_dn2toa(image, bands):
   """
   Wrapper function that takes an aster image and converts all pixel values from 
   digital number to radiance and then converts the specified bands from radiance
