@@ -43,7 +43,7 @@ def aster_image_preprocessing(image, bands=['B01', 'B02', 'B3N', 'B04', 'B13'], 
 
 
 
-def aster_collection_preprocessing(geom, bands = ['B01', 'B02', 'B3N', 'B04', 'B13'], masks = ['cloud', 'snow', 'water']):
+def aster_collection_preprocessing(geom, bands = ['B01', 'B02', 'B3N', 'B04', 'B13'], masks = ['cloud', 'snow', 'water'], cloudcover = 25):
   """
   Generate a preprocessed ASTER image collection based on the input geometry, specified bands, and masks.
   
@@ -51,6 +51,7 @@ def aster_collection_preprocessing(geom, bands = ['B01', 'B02', 'B3N', 'B04', 'B
   - geom: The geometry to filter the ASTER image collection by.
   - bands: List of bands to include in the preprocessing (default is ['B01', 'B02', 'B3N', 'B04', 'B13']).
   - masks: List of masks to apply during preprocessing (default includes all available masks: ['cloud', 'snow', 'water']).
+  - cloudcover: Maximum image cloud cover percentage (default is 25).
   
   Returns:
   ee.ImageCollection: Preprocessed ASTER image collection clipped to the input geometry.
@@ -58,7 +59,16 @@ def aster_collection_preprocessing(geom, bands = ['B01', 'B02', 'B3N', 'B04', 'B
   
   coll = ee_i.ImageCollection("ASTER/AST_L1T_003")
   coll = coll.filterBounds(geom)
+  
+  snow_bands = {'B01', 'B04'}
+  if 'snow' in masks:
+    bands = list(snow_bands.union(bands))
+  cloud_bands = {'B01', 'B02', 'B3N', 'B04', 'B13'}
+  if 'cloud' in masks:
+    bands = list(cloud_bands.union(bands)) 
   coll = aster_bands_present_filter(coll, bands = bands)
+
+  coll = coll.filter(ee_i.Filter.lte('CLOUDCOVER', cloudcover))
   
   coll = coll.map(lambda x: aster_image_preprocessing(x, bands, masks))
   coll = coll.map(lambda x: x.clip(geom))
