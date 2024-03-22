@@ -6,12 +6,11 @@ from .masks import water_mask, aster_cloud_mask, aster_snow_mask
 from .ee_utm_projection import get_utm_proj_from_coords
 
 # Filter ASTER imagery that contain all bands
-def aster_bands_present_filter(collection, bands = ['B01', 'B02', 'B3N', 'B04', 'B05', 'B06', 'B07', 'B08', 'B09', 'B13']):
+def aster_bands_present_filter(collection, bands):
     """
     Takes an image collection, assumed to be ASTER imagery.
     Returns a filtered image collection that contains only
-    images with all nine VIR/SWIR bands and all 5 TIR bands.
-    By default, filters for the bands necessary to calculate the cloud mask.
+    images with all of the specified bands.
     """
     filters = [ee_i.Filter.listContains('ORIGINAL_BANDS_PRESENT', band) for band in bands]
     
@@ -22,6 +21,9 @@ def get_geom_area(geom, proj):
 
 def get_pixel_area(image, geom, proj):
    return ee_i.Number(image.pixelArea().reduceRegion(ee_i.Reducer.sum(), geom, crs = proj.crs(), scale = proj.nominalScale(), bestEffort = True).get('area'))
+
+def set_geom_coverage_property(image, geom, geom_area, proj):
+   return image.set({'geom_coverage': get_pixel_area(image, geom, proj).divide(geom_area)})
 
 def aster_image_preprocessing(image, bands=[], masks = []):
    """
@@ -67,20 +69,21 @@ def aster_collection_preprocessing(geom, bands = [], masks = [], cloudcover = 25
   projection = get_utm_proj_from_coords(geom.centroid(maxError = 1).coordinates().getInfo())
   geom_area = get_geom_area(geom, projection)
 
-  coll = ee_i.ImageCollection("ASTER/AST_L1T_003")
-  coll = coll.filterBounds(geom)
-  
   snow_bands = {'B01', 'B04'}
   if 'snow' in masks:
     bands = list(snow_bands.union(bands))
   cloud_bands = {'B01', 'B02', 'B3N', 'B04', 'B13'}
   if 'cloud' in masks:
     bands = list(cloud_bands.union(bands)) 
-  coll = aster_bands_present_filter(coll, bands = bands)
 
+  coll = ee_i.ImageCollection("ASTER/AST_L1T_003")
+  coll = coll.filterBounds(geom)
   coll = coll.filter(ee_i.Filter.lte('CLOUDCOVER', cloudcover))
+  coll = aster_bands_present_filter(coll, bands = bands)
+  coll = coll.map(lambda x: x.clip(geom))
   
   coll = coll.map(lambda x: aster_image_preprocessing(x, bands, masks))
-  coll = coll.map(lambda x: x.clip(geom))
+  coll = coll.map(lambda x: set_geom_coverage_property(x, geom, geom_area, projection))
+
   
   return coll
