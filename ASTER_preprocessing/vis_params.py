@@ -3,7 +3,7 @@ from .ee_utm_projection import get_utm_proj_from_coords
 
 def vis_params_image(image, bands):
     geometry = image.geometry()
-    projection = get_utm_proj_from_coords(geometry.centroid().coordinates().getInfo())
+    projection = get_utm_proj_from_coords(geometry.centroid(maxError = 1).coordinates().getInfo())
     
     percentiles = image.select(bands).reduceRegion(
         reducer = ee_i.Reducer.percentile([5, 95]),
