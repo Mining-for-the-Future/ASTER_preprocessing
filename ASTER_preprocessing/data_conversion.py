@@ -49,7 +49,7 @@ def __aster_radiance__(image):
 
   radiance = image.subtract(1).multiply(coefficients)
 
-  return image.addBands(radiance, None, True)
+  return ee_i.Image(image.addBands(radiance, None, True))
 
 def __aster_reflectance__(image, bands):
   """
@@ -90,7 +90,7 @@ def __aster_reflectance__(image, bands):
         .multiply(reflectanceFactor) \
         .divide(irradiance)
 
-  return image.addBands(reflectance, None, True)
+  return ee_i.Image(image.addBands(reflectance, None, True))
 
 def __aster_brightness_temp__(image, bands = []):
   """
@@ -131,7 +131,7 @@ def __aster_brightness_temp__(image, bands = []):
                    {'K1': K1_vals, 'K2': K2_vals, 'L': image.select(bands)}
   )
 
-  return image.addBands(T.rename(bands), None, True)
+  return ee_i.Image(image.addBands(T.rename(bands), None, True))
 
 def aster_dn2toa(image, bands):
   """
@@ -142,4 +142,4 @@ def aster_dn2toa(image, bands):
   img = __aster_radiance__(image)
   img = __call_function_with_bands__(img, bands, ['B01', 'B02', 'B3N', 'B04', 'B05', 'B06', 'B07', 'B08', 'B09'], __aster_reflectance__)
   img = __call_function_with_bands__(img, bands, ['B10', 'B11', 'B12', 'B13', 'B14'], __aster_brightness_temp__)
-  return img
+  return ee_i.Image(img)
