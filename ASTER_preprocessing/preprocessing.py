@@ -25,20 +25,19 @@ def get_pixel_area(image, geom, proj):
 def set_geom_coverage_property(image, geom, geom_area, proj):
    return image.set({'geom_coverage': get_pixel_area(image, geom, proj).divide(geom_area)})
 
-def aster_image_preprocessing(image, bands=[], masks = []):
+def aster_image_preprocessing(image, bands=['B01', 'B02', 'B3N', 'B04', 'B05', 'B06', 'B07', 'B08', 'B09', 'B10', 'B11', 'B12', 'B13', 'B14'], masks = []):
    """
    Converts the specified bands in an image from digital number to 
    at-sensor reflectance (VIS/SWIR) and at-satellite brightness temperature (TIR),
    then applies the specified masks (snow, water, and cloud).
-   """
-   if len(bands) > 0:
-      snow_bands = {'B01', 'B04'}
-      if 'snow' in masks:
-         bands = list(snow_bands.union(bands))
+   """   
+   snow_bands = {'B01', 'B04'}
+   if 'snow' in masks:
+      bands = list(snow_bands.union(bands))
 
-      cloud_bands = {'B01', 'B02', 'B3N', 'B04', 'B13'}
-      if 'cloud' in masks:
-         bands = list(cloud_bands.union(bands))
+   cloud_bands = {'B01', 'B02', 'B3N', 'B04', 'B13'}
+   if 'cloud' in masks:
+      bands = list(cloud_bands.union(bands))
    
    mask_dict = {
       'cloud': aster_cloud_mask,
@@ -54,7 +53,7 @@ def aster_image_preprocessing(image, bands=[], masks = []):
 
 
 
-def aster_collection_preprocessing(geom, bands = [], masks = [], cloudcover = 25):
+def aster_collection_preprocessing(geom, bands = ['B01', 'B02', 'B3N', 'B04', 'B05', 'B06', 'B07', 'B08', 'B09', 'B10', 'B11', 'B12', 'B13', 'B14'], masks = [], cloudcover = 25):
   """
   Generate a preprocessed ASTER image collection based on the input geometry, specified bands, and masks.
   
