@@ -20,7 +20,7 @@ def get_geom_area(geom, proj):
    return geom.area(maxError = 1, proj = proj)
 
 def get_pixel_area(image, geom, proj):
-   return ee_i.Number(image.pixelArea().reduceRegion(ee_i.Reducer.sum(), geom, crs = proj.crs(), scale = proj.nominalScale(), bestEffort = True).get('area'))
+   return ee_i.Number(image.pixelArea().multiply(image.mask()).reduceRegion(ee_i.Reducer.sum(), geom, crs = proj.crs(), scale = proj.nominalScale(), bestEffort = True).get('area'))
 
 def set_geom_coverage_property(image, geom, geom_area, proj):
    return image.set({'geom_coverage': get_pixel_area(image, geom, proj).divide(geom_area)})
