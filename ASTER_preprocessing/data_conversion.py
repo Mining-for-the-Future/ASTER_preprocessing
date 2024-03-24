@@ -36,7 +36,7 @@ def __call_function_with_bands__(image, user_bands, required_bands, function):
         bands = ee_i.List(user_bands)
 
     bands = bands.filter(ee_i.Filter.inList('item', required_bands))
-    return ee_i.Algorithms.If(bands.length().eq(0), trueCase = __no_valid_bands_result__(image), falseCase = ee_i.Image(function(image, bands)))
+    return ee_i.Image(ee_i.Algorithms.If(bands.length().eq(0), trueCase = __no_valid_bands_result__(image), falseCase = function(image, bands)))
 
 def __aster_radiance__(image):
   """
