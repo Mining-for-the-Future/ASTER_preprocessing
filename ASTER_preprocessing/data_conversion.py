@@ -1,6 +1,44 @@
 from .preprocessing import ee_i
+from warnings import warn
 
-def aster_radiance(image):
+def __no_valid_bands_result__(image):
+    """
+    A function that handles the case when no valid bands are found in an image.
+
+    Args:
+        image (any): The image for which valid bands are being checked.
+
+    Returns:
+        any: The original image if no valid bands are found.
+
+    Raises:
+        UserWarning: If no valid bands are found in the image.
+    """
+    warn("No valid bands found in image. Function not run.", UserWarning)
+    return image
+
+def __call_function_with_bands__(image, user_bands, required_bands, function):
+    """
+    A function that calls another function with specified bands. 
+    
+    Args:
+        image: The image to operate on.
+        user_bands: The bands provided by the user.
+        required_bands: The bands required for the operation.
+        function: The function to be called with the specified bands.
+    
+    Returns:
+        The result of calling the function on the image with the specified bands.
+    """
+    if len(user_bands) == 0:
+        bands = image.bandNames()
+    else:
+        bands = ee_i.List(user_bands)
+
+    bands = bands.filter(ee_i.Filter.inList('item', required_bands))
+    return ee_i.Algorithms.If(bands.length().eq(0), trueCase = __no_valid_bands_result__(image), falseCase = ee_i.Image(function(image, bands)))
+
+def __aster_radiance__(image):
   """
   Takes an ASTER image with pixel values in DN (as stored by Googel Earth Engine).
   Converts DN to at-sensor radiance across all bands.
@@ -13,21 +51,12 @@ def aster_radiance(image):
 
   return image.addBands(radiance, None, True)
 
-def aster_reflectance(image, bands):
+def __aster_reflectance__(image, bands):
   """
   Takes an ASTER image with pixel values in at-sensor radiance.
   Converts VIS/SWIR bands (B01 - B09) to at-sensor reflectance.
   """
-  if len(bands) == 0:
-    bands = image.bandNames()
-  else:
-    bands = ee_i.List(bands)
   
-  vis_bands = ee_i.List(['B01', 'B02', 'B3N', 'B04', 'B05', 'B06', 'B07', 'B08', 'B09'])
-  bands = bands.filter(ee_i.Filter.inList('item', vis_bands))
-  if bands.length().eq(0):
-    return image
-
   dayOfYear = image.date().getRelative('day', 'year')
 
   earthSunDistance = ee_i.Image().expression(
@@ -63,22 +92,12 @@ def aster_reflectance(image, bands):
 
   return image.addBands(reflectance, None, True)
 
-def aster_brightness_temp(image, bands = []):
+def __aster_brightness_temp__(image, bands = []):
   """
   Takes an ASTER image with pixel values in at-sensor radiance.
   Converts TIR bands to at-satellite brightness temperature.
   """
-  if len(bands) == 0:
-    bands = image.bandNames()
-  else:
-    bands = ee_i.List(bands)
-  
-  tir_bands = ee_i.List(['B10', 'B11', 'B12', 'B13', 'B14'])
-  bands = bands.filter(ee_i.Filter.inList('item', tir_bands))
-
-  if bands.length().eq(0):
-    return image
-  
+    
   k_vals = ee_i.Dictionary({
   'B10':{
     'K1': 3040.136402,
@@ -120,7 +139,7 @@ def aster_dn2toa(image, bands):
   digital number to radiance and then converts the specified bands from radiance
   to top-of-atmosphere reflectance (bands 1 - 9) and at-satellite brightness temperature (bands 10 - 14).
   """
-  img = aster_radiance(image)
-  img = aster_reflectance(img, bands)
-  img = aster_brightness_temp(img, bands)
+  img = __aster_radiance__(image)
+  img = __call_function_with_bands__(img, bands, ['B01', 'B02', 'B3N', 'B04', 'B05', 'B06', 'B07', 'B08', 'B09'], __aster_reflectance__)
+  img = __call_function_with_bands__(img, bands, ['B10', 'B11', 'B12', 'B13', 'B14'], __aster_brightness_temp__)
   return img
