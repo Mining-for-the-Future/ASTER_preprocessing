@@ -88,6 +88,6 @@ def aster_collection_preprocessing(geom, bands = ['B01', 'B02', 'B3N', 'B04', 'B
   
   coll = coll.map(lambda x: aster_image_preprocessing(x, bands, masks))
   coll = coll.map(lambda x: set_geom_coverage_property(x, geom, geom_area, projection))
+  coll = coll.filter(ee_i.Filter.gte('geom_coverage', 0.75))
 
-  
   return coll
