@@ -1,45 +1,62 @@
 from .preprocessing import ee_i
 import utm
 
-def get_utm_proj_from_coords(coordinates):
-    """
-    Returns a UTM projection based on the input coordinates.
-    
-    Parameters
-    ----------
-    coordinates : list
-        A list containing the longitude and latitude of a point in decimal degrees.
-        The format should be [Longitude, Latitude].
+def get_zone_no_from_lat_lon_ee(latitude, longitude):
+    variables = {'latitude': latitude, 'longitude': longitude}
 
-    Returns
-    -------
-    ee.Projection
-        An Earth Engine projection object in Universal Transverse Mercator (UTM) projection.
+    test_32 = ee_i.Number.expression(
+        expression = '56 <= latitude & latitude < 64 & 3 <= longitude & longitude < 12',
+        vars = variables
+    )
 
-    Raises
-    ------
-    ValueError
-        If the input coordinates are not in the format [Longitude, Latitude].
-    """
-    
-    # Check if the input is in the format [Longitude, Latitude]
-    if len(coordinates) != 2:
-        raise ValueError("Input coordinates should be in the format [Longitude, Latitude].")
+    test_31 = ee_i.Number.expression(
+        expression = '72 <= latitude & latitude <= 84 & longitude >= 0 & longitude < 9',
+        vars = variables
+    )
 
-    # Extract longitude and latitude from the input
-    longitude, latitude = coordinates
+    test_33 = ee_i.Number.expression(
+        expression = '72 <= latitude & latitude <= 84 & longitude >= 0 & longitude < 21',
+        vars = variables
+    )
 
-    # Calculate UTM zone and hemisphere
-    utm_zone = utm.latlon_to_zone_number(latitude, longitude)
-    
-    # Determine the EPSG code based on the hemisphere
-    if latitude >= 0:
-        epsg_code = 32600 + utm_zone
-    else:
-        epsg_code = 32700 + utm_zone
+    test_35 = ee_i.Number.expression(
+        expression = '72 <= latitude & latitude <= 84 & longitude >= 0 & longitude < 33',
+        vars = variables
+    )
 
-    epsg_str = 'EPSG:'+str(epsg_code)
-    projection = ee_i.Projection(epsg_str).atScale(1)
+    test_37 = ee_i.Number.expression(
+        expression = '72 <= latitude & latitude <= 84 & longitude >= 0 & longitude < 42',
+        vars = variables
+    )
 
-    return projection
+    zone_from_lon = ee_i.Number.expression(
+        expression = '((longitude + 180) / 6) + 1',
+        vars = variables
+    ).floor()
 
+    result = ee_i.Number(ee_i.Algorithms.If(
+        test_32, trueCase = 32, falseCase = ee_i.Algorithms.If(
+            test_31, trueCase = 31, falseCase = ee_i.Algorithms.If(
+                test_33, trueCase = 33, falseCase = ee_i.Algorithms.If(
+                    test_35, trueCase = 35, falseCase = ee_i.Algorithms.If(
+                        test_37, trueCase = 37, falseCase = zone_from_lon
+                    )
+                )
+            )
+        )
+    )).uint8()
+
+    return result
+
+def get_utm_zone_code_from_poly(geom):
+    coordinates = geom.centroid(maxError = 1).coordinates()
+    latitude = coordinates.getNumber(1)
+    longitude = coordinates.getNumber(0)
+    zone_no = get_zone_no_from_lat_lon_ee(latitude, longitude)
+    epsg_no = ee_i.Number(ee_i.Algorithms.If(
+        latitude.gte(0),
+        trueCase = zone_no.add(32600),
+        falseCase = zone_no.add(32700)
+    ))
+    epsg_str = ee_i.Algorithms.String(epsg_no)
+    return ee_i.String('EPSG:').cat(ee_i.String(epsg_str))
