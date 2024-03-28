@@ -70,6 +70,12 @@ def aster_collection_preprocessing(geom, bands = ['B01', 'B02', 'B3N', 'B04', 'B
   Returns:
   ee.ImageCollection: Preprocessed ASTER image collection clipped to the input geometry.
   """
+  geom = ee_i.Geometry(ee_i.Algorithms.If(
+    ee_i.Algorithms.IsEqual(ee_i.Algorithms.ObjectType(geom), 'Feature'),
+    trueCase = geom.geometry(),
+    falseCase = geom
+   ))
+  
   projection = get_utm_proj_from_coords(geom.centroid(maxError = 1).coordinates().getInfo())
   geom_area = get_geom_area(geom, projection)
 
