@@ -48,7 +48,7 @@ def get_zone_no_from_lat_lon_ee(latitude, longitude):
 
     return result
 
-def get_utm_zone_code_from_poly(geom):
+def get_utm_proj_from_poly(geom):
     coordinates = geom.centroid(maxError = 1).coordinates()
     latitude = coordinates.getNumber(1)
     longitude = coordinates.getNumber(0)
@@ -59,4 +59,5 @@ def get_utm_zone_code_from_poly(geom):
         falseCase = zone_no.add(32700)
     ))
     epsg_str = ee_i.Algorithms.String(epsg_no)
-    return ee_i.String('EPSG:').cat(ee_i.String(epsg_str))
+    epsg_code = ee_i.String('EPSG:').cat(ee_i.String(epsg_str))
+    return ee_i.Projection(epsg_code).atScale(1)
