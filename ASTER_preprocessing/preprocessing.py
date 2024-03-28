@@ -1,58 +1,93 @@
-# This module contains all the functions necessary to process L1T ASTER data 
-# for quantitative analysis. 
-# All functions are called in the function aster_preprocessing() which 
-# takes an ee_i.Geometry object defining the area of interest. 
-# It returns a dictionary containing the processed image as an ee_i.Image object, 
-# the crs and the crs transform. 
-
 from .__init__ import initialize_ee
 ee_i = initialize_ee()
 
-from .data_conversion import aster_radiance, aster_reflectance, aster_brightness_temp
+from .data_conversion import aster_dn2toa
 from .masks import water_mask, aster_cloud_mask, aster_snow_mask
+from .ee_utm_projection import get_utm_proj_from_coords
 
 # Filter ASTER imagery that contain all bands
-def aster_bands_present_filter(collection):
+def aster_bands_present_filter(collection, bands):
     """
     Takes an image collection, assumed to be ASTER imagery.
     Returns a filtered image collection that contains only
-    images with all nine VIR/SWIR bands and all 5 TIR bands.
+    images with all of the specified bands.
     """
-    return collection.filter(ee_i.Filter.And(
-    ee_i.Filter.listContains('ORIGINAL_BANDS_PRESENT', 'B01'),
-    ee_i.Filter.listContains('ORIGINAL_BANDS_PRESENT', 'B02'),
-    ee_i.Filter.listContains('ORIGINAL_BANDS_PRESENT', 'B3N'),
-    ee_i.Filter.listContains('ORIGINAL_BANDS_PRESENT', 'B04'),
-    ee_i.Filter.listContains('ORIGINAL_BANDS_PRESENT', 'B05'),
-    ee_i.Filter.listContains('ORIGINAL_BANDS_PRESENT', 'B06'),
-    ee_i.Filter.listContains('ORIGINAL_BANDS_PRESENT', 'B07'),
-    ee_i.Filter.listContains('ORIGINAL_BANDS_PRESENT', 'B08'),
-    ee_i.Filter.listContains('ORIGINAL_BANDS_PRESENT', 'B09'),
-    ee_i.Filter.listContains('ORIGINAL_BANDS_PRESENT', 'B13')
-))
+    filters = [ee_i.Filter.listContains('ORIGINAL_BANDS_PRESENT', band) for band in bands]
+    
+    return collection.filter(ee_i.Filter.And(filters))
 
-def aster_preprocessing(geom):
+def get_geom_area(geom, proj):
+   return geom.area(maxError = 1, proj = proj)
+
+def get_pixel_area(image, geom, proj):
+   return ee_i.Number(
+      image.pixelArea().
+      multiply(image.mask()).
+      reduceRegion(ee_i.Reducer.sum(), geom, crs = proj.crs(), scale = proj.nominalScale(), bestEffort = True)
+      .values().reduce(ee_i.Reducer.mean()))
+
+def set_geom_coverage_property(image, geom, geom_area, proj):
+   return image.set({'geom_coverage': get_pixel_area(image, geom, proj).divide(geom_area)})
+
+def aster_image_preprocessing(image, bands=['B01', 'B02', 'B3N', 'B04', 'B05', 'B06', 'B07', 'B08', 'B09', 'B10', 'B11', 'B12', 'B13', 'B14'], masks = []):
+   """
+   Converts the specified bands in an image from digital number to 
+   at-sensor reflectance (VIS/SWIR) and at-satellite brightness temperature (TIR),
+   then applies the specified masks (snow, water, and cloud).
+   """   
+   snow_bands = {'B01', 'B04'}
+   if 'snow' in masks:
+      bands = list(snow_bands.union(bands))
+
+   cloud_bands = {'B01', 'B02', 'B3N', 'B04', 'B13'}
+   if 'cloud' in masks:
+      bands = list(cloud_bands.union(bands))
+   
+   mask_dict = {
+      'cloud': aster_cloud_mask,
+      'snow': aster_snow_mask,
+      'water': water_mask
+   }
+   
+   image = ee_i.Image(image.select(image.get('ORIGINAL_BANDS_PRESENT')))
+   image = aster_dn2toa(image, bands)
+   for mask in masks:
+      image = mask_dict[mask](image)
+   return image
+
+
+
+def aster_collection_preprocessing(geom, bands = ['B01', 'B02', 'B3N', 'B04', 'B05', 'B06', 'B07', 'B08', 'B09', 'B10', 'B11', 'B12', 'B13', 'B14'], masks = [], cloudcover = 25):
   """
-  Takes a geometry (ee_i.ComputedObject, ee_i.FeatureCollection, or ee_i.Geometry).
-  Collects ASTER satellite imagery that intersects the geometry and
-  implements all available preprocessing functions.
-  Reduces resulting ImageCollection to a single Image object
-  by calculating the median pixel value.
-  Clips the image to the geometry.
-  Returns a dictionary containing the processed image along with 
-  the crs and crs_transform metadata of the first image in the
-  ImageCollection that intersects the geometry.
+  Generate a preprocessed ASTER image collection based on the input geometry, specified bands, and masks.
+  
+  Parameters:
+  - geom: The geometry to filter the ASTER image collection by.
+  - bands: List of bands to include in the preprocessing (default is ['B01', 'B02', 'B3N', 'B04', 'B13']).
+  - masks: List of masks to apply during preprocessing (default includes all available masks: ['cloud', 'snow', 'water']).
+  - cloudcover: Maximum image cloud cover percentage (default is 25).
+  
+  Returns:
+  ee.ImageCollection: Preprocessed ASTER image collection clipped to the input geometry.
   """
+  projection = get_utm_proj_from_coords(geom.centroid(maxError = 1).coordinates().getInfo())
+  geom_area = get_geom_area(geom, projection)
+
+  snow_bands = {'B01', 'B04'}
+  if 'snow' in masks:
+    bands = list(snow_bands.union(bands))
+  cloud_bands = {'B01', 'B02', 'B3N', 'B04', 'B13'}
+  if 'cloud' in masks:
+    bands = list(cloud_bands.union(bands)) 
+
   coll = ee_i.ImageCollection("ASTER/AST_L1T_003")
   coll = coll.filterBounds(geom)
-  coll = aster_bands_present_filter(coll)
-  crs = coll.first().select('B01').projection().getInfo()['crs']
-  transform = coll.first().select('B01').projection().getInfo()['transform']
-  coll = coll.map(aster_radiance)
-  coll = coll.map(aster_reflectance)
-  coll = coll.map(aster_brightness_temp)
-  coll = coll.map(water_mask)
-  coll = coll.map(aster_cloud_mask)
-  coll = coll.map(aster_snow_mask)
-  coll = coll.median().clip(geom)
-  return {'imagery': coll, 'crs': crs, 'transform': transform}
+  coll = coll.filter(ee_i.Filter.lte('CLOUDCOVER', cloudcover))
+  coll = aster_bands_present_filter(coll, bands = bands)
+  coll = coll.map(lambda x: x.clip(geom))
+  
+  coll = coll.map(lambda x: aster_image_preprocessing(x, bands, masks))
+  coll = coll.map(lambda x: set_geom_coverage_property(x, geom, geom_area, projection))
+  coll = coll.filter(ee_i.Filter.gte('geom_coverage', 0.75))
+
+  return coll

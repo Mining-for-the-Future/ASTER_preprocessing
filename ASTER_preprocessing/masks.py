@@ -26,8 +26,10 @@ def aster_ndsi(image):
   Takes an ASTER image and calculates the Normalized Difference Snow Index.
   Returns an image with a single band.
   """
-  return (image.select('B01').subtract(image.select('B04')).divide((image.select('B01').add(image.select('B04'))))).rename('ndsi')
-
+  if image.bandNames().containsAll(['B01', 'B04']):
+    return (image.select('B01').subtract(image.select('B04')).divide((image.select('B01').add(image.select('B04'))))).rename('ndsi')
+  else:
+    raise ValueError("Image is missing required bands for NDSI calculation ('B01', 'B04')")
 def ac_filt1(image):
   """
   Takes an ASTER image and applies filter 1 in the first pass of Hulley and Hook's (2008) NACMA.
@@ -90,19 +92,22 @@ def aster_cloud_mask(image):
   of the New Aster Cloud Mask Algorithm (NACMA) proposed by Hulley and Hook (2008).
   Returns a masked image.
   """
-  img = ac_filt1(image)
-  img = ac_filt2(img)
-  img = ac_filt3(img)
-  img = ac_filt4(img)
-  img = ac_filt5(img)
-  img = ac_filt6(img)
-  img = ac_filt7(img)
-  # The seven filters identify pixels that ARE clouds and mask the rest.
-  # ee_i.Image.unmask() replaces the masked pixels of an image with a constant value.
-  # The .eq() filter returns a binary mask identifying which pixels match the
-  # constant value assigned in the unmask() method, i.e., pixels that ARE NOT clouds.
-  mask = img.unmask(ee_i.Image.constant(-1)).eq(-1)
-  return image.updateMask(mask)
+  if image.bandNames().containsAll(['B01', 'B02', 'B3N', 'B04', 'B13']):
+    img = ac_filt1(image)
+    img = ac_filt2(img)
+    img = ac_filt3(img)
+    img = ac_filt4(img)
+    img = ac_filt5(img)
+    img = ac_filt6(img)
+    img = ac_filt7(img)
+    # The seven filters identify pixels that ARE clouds and mask the rest.
+    # ee_i.Image.unmask() replaces the masked pixels of an image with a constant value.
+    # The .eq() filter returns a binary mask identifying which pixels match the
+    # constant value assigned in the unmask() method, i.e., pixels that ARE NOT clouds.
+    mask = img.unmask(ee_i.Image.constant(-1)).eq(-1)
+    return image.updateMask(mask)
+  else:
+    raise ValueError("Image is missing required bands for cloud mask calculation ('B01', 'B02', 'B3N', 'B04', 'B13')")
 
 
 def aster_snow_mask(image):
