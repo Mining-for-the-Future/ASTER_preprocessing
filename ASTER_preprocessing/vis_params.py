@@ -6,15 +6,15 @@ def vis_params_image(image, bands):
     projection = get_utm_proj_from_coords(geometry.centroid(maxError = 1).coordinates().getInfo())
     
     percentiles = image.select(bands).reduceRegion(
-        reducer = ee_i.Reducer.percentile([5, 95]),
+        reducer = ee_i.Reducer.percentile([1, 99]),
         geometry = geometry,
         crs = projection.crs(),
         scale = 30,
         bestEffort = True).getInfo()
 
-    b_p5 = [band + '_p5' for band in bands]
-    b_p95 = [band + '_p95' for band in bands]
-    mins = [percentiles[min] for min in b_p5]
-    maxs = [percentiles[max] for max in b_p95]
+    b_p1 = [band + '_p1' for band in bands]
+    b_p99 = [band + '_p99' for band in bands]
+    mins = [percentiles[min] for min in b_p1]
+    maxs = [percentiles[max] for max in b_p99]
     vis_params = {'min': mins, 'max': maxs, 'bands': bands}
     return vis_params
