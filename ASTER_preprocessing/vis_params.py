@@ -1,9 +1,9 @@
 from .preprocessing import ee_i
-from .ee_utm_projection import get_utm_proj_from_coords
+from .ee_utm_projection import get_utm_proj_from_poly
 
 def vis_params_image(image, bands):
     geometry = image.geometry()
-    projection = get_utm_proj_from_coords(geometry.centroid(maxError = 1).coordinates().getInfo())
+    projection = get_utm_proj_from_poly(geometry)
     
     percentiles = image.select(bands).reduceRegion(
         reducer = ee_i.Reducer.percentile([1, 99]),

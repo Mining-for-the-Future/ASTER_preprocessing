@@ -3,7 +3,7 @@ ee_i = initialize_ee()
 
 from .data_conversion import aster_dn2toa
 from .masks import water_mask, aster_cloud_mask, aster_snow_mask
-from .ee_utm_projection import get_utm_proj_from_coords
+from .ee_utm_projection import get_utm_proj_from_poly
 
 # Filter ASTER imagery that contain all bands
 def aster_bands_present_filter(collection, bands):
@@ -70,7 +70,8 @@ def aster_collection_preprocessing(geom, bands = ['B01', 'B02', 'B3N', 'B04', 'B
   Returns:
   ee.ImageCollection: Preprocessed ASTER image collection clipped to the input geometry.
   """
-  projection = get_utm_proj_from_coords(geom.centroid(maxError = 1).coordinates().getInfo())
+    
+  projection = get_utm_proj_from_poly(geom)
   geom_area = get_geom_area(geom, projection)
 
   snow_bands = {'B01', 'B04'}
