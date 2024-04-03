@@ -4,6 +4,12 @@ ee_i = initialize_ee()
 from .data_conversion import aster_dn2toa
 from .masks import water_mask, aster_cloud_mask, aster_snow_mask
 from .ee_utm_projection import get_utm_proj_from_poly
+from .area_coverage import get_geom_area, set_geom_coverage_property
+
+
+default_bands = ['B01', 'B02', 'B3N', 'B04', 'B05', 'B06', 'B07', 'B08', 'B09', 'B10', 'B11', 'B12', 'B13', 'B14']
+default_masks = []
+default_cloudcover = 25
 
 # Filter ASTER imagery that contain all bands
 def aster_bands_present_filter(collection, bands):
@@ -16,20 +22,9 @@ def aster_bands_present_filter(collection, bands):
     
     return collection.filter(ee_i.Filter.And(filters))
 
-def get_geom_area(geom, proj):
-   return geom.area(maxError = 1, proj = proj)
 
-def get_pixel_area(image, geom, proj):
-   return ee_i.Number(
-      image.pixelArea().
-      multiply(image.mask()).
-      reduceRegion(ee_i.Reducer.sum(), geom, crs = proj.crs(), scale = proj.nominalScale(), bestEffort = True)
-      .values().reduce(ee_i.Reducer.mean()))
 
-def set_geom_coverage_property(image, geom, geom_area, proj):
-   return image.set({'geom_coverage': get_pixel_area(image, geom, proj).divide(geom_area)})
-
-def aster_image_preprocessing(image, bands=['B01', 'B02', 'B3N', 'B04', 'B05', 'B06', 'B07', 'B08', 'B09', 'B10', 'B11', 'B12', 'B13', 'B14'], masks = []):
+def aster_image_preprocessing(image, bands = default_bands, masks = default_masks):
    """
    Converts the specified bands in an image from digital number to 
    at-sensor reflectance (VIS/SWIR) and at-satellite brightness temperature (TIR),
@@ -57,7 +52,7 @@ def aster_image_preprocessing(image, bands=['B01', 'B02', 'B3N', 'B04', 'B05', '
 
 
 
-def aster_collection_preprocessing(geom, bands = ['B01', 'B02', 'B3N', 'B04', 'B05', 'B06', 'B07', 'B08', 'B09', 'B10', 'B11', 'B12', 'B13', 'B14'], masks = [], cloudcover = 25):
+def aster_collection_preprocessing(geom, bands = default_bands, masks = default_masks, cloudcover = default_cloudcover):
   """
   Generate a preprocessed ASTER image collection based on the input geometry, specified bands, and masks.
   
@@ -92,3 +87,6 @@ def aster_collection_preprocessing(geom, bands = ['B01', 'B02', 'B3N', 'B04', 'B
   coll = coll.filter(ee_i.Filter.gte('geom_coverage', 0.75))
 
   return coll
+
+def get_best_image(image_coll):
+    return image_coll.sort('geom_coverage', ascending = False).first()

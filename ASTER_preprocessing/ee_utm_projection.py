@@ -1,7 +1,16 @@
 from .preprocessing import ee_i
-import utm
 
-def get_zone_no_from_lat_lon_ee(latitude, longitude):
+def get_zone_no_from_lat_lon(latitude, longitude):
+    """
+    Get the UTM zone number from latitude and longitude coordinates.
+
+    Parameters:
+      latitude (ee.Number): The latitude coordinate.
+      longitude (ee.Number): The longitude coordinate.
+
+    Returns:
+      ee.Number: The zone number based on the given latitude and longitude coordinates.
+    """
     variables = {'latitude': latitude, 'longitude': longitude}
 
     test_32 = ee_i.Number.expression(
@@ -49,10 +58,19 @@ def get_zone_no_from_lat_lon_ee(latitude, longitude):
     return result
 
 def get_utm_proj_from_poly(geom):
+    """
+    Get the UTM projection from a polygon geometry.
+    
+    Parameters:
+      geom (ee.Geometry.Polygon): The polygon geometry.
+    
+    Returns:
+      ee.Projection: A projection object at scale 1.
+    """
     coordinates = geom.centroid(maxError = 1).coordinates()
     latitude = coordinates.getNumber(1)
     longitude = coordinates.getNumber(0)
-    zone_no = get_zone_no_from_lat_lon_ee(latitude, longitude)
+    zone_no = get_zone_no_from_lat_lon(latitude, longitude)
     epsg_no = ee_i.Number(ee_i.Algorithms.If(
         latitude.gte(0),
         trueCase = zone_no.add(32600),
